@@ -60,6 +60,7 @@ export function DonChiTiet({ id, me, onClose, onDoi }) {
   const [soMo, setSoMo] = useState(false);
   const ct = useTai(() => api('getDon', id), [id]);
   const d = ct.data;
+  const coGiaBht = !!(d && d.don && 'tongGiaBht' in d.don);   // đơn đại lý, người xem là BHT / nội bộ
   const xong = () => { ct.reload(); onDoi && onDoi(); };
 
   async function huyKhach() {
@@ -108,11 +109,12 @@ export function DonChiTiet({ id, me, onClose, onDoi }) {
           </dl>
           <div className="tablewrap">
             <table>
-              <thead><tr><th>Mã</th><th>Tên</th><th className="num">SL</th><th className="num">Đơn giá</th><th className="num">Thành tiền</th><th>Ngày giao dự kiến</th><th className="num">Đã giao</th><th>DO</th><th>Trạng thái</th></tr></thead>
+              <thead><tr><th>Mã</th><th>Tên</th><th className="num">SL</th><th className="num">{coGiaBht ? 'Giá đại lý' : 'Đơn giá'}</th><th className="num">Thành tiền</th>{coGiaBht && <th className="num" title="Giá Karofi bán BHT — SO sold-to Puresys">Giá Karofi→BHT</th>}<th>Ngày giao dự kiến</th><th className="num">Đã giao</th><th>DO</th><th>Trạng thái</th></tr></thead>
               <tbody>
                 {d.dongs.map((l) => (
                   <tr key={l.id}>
                     <td><b>{l.sku}</b></td><td>{l.ten}</td><td className="num">{fmtNum(l.qty)}</td><td className="num">{fmtTien(l.gia)}</td><td className="num">{fmtTien(l.thanhTien)}</td>
+                    {coGiaBht && <td className="num">{l.giaBht === null ? <span className="small" style={{ color: 'var(--rose)' }}>chưa có</span> : fmtTien(l.giaBht)}</td>}
                     <td>{l.ngayGiaoDk ? fmtNgay(l.ngayGiaoDk) : l.lyDo ? <span className="muted">Chưa có ngày{l.ghiChuKh ? ' — ' + l.ghiChuKh : ''}</span> : <span className="muted">—</span>}</td>
                     <td className="num">{l.daGiao ? fmtNum(l.daGiao) + ' / ' + fmtNum(l.qty) : ''}</td>
                     <td className="small">{l.giao.map((g) => <div key={g.id}>{g.soDo} · {fmtNum(g.sl)} {g.pgi ? '✔ xuất ' + fmtNgay(g.ngayPgi) : '(chờ xuất kho)'}</div>)}</td>
@@ -120,7 +122,8 @@ export function DonChiTiet({ id, me, onClose, onDoi }) {
                   </tr>
                 ))}
               </tbody>
-              <tfoot><tr><td colSpan={4} className="right"><b>Tổng giá trị</b></td><td className="num"><b>{fmtTien(d.don.tong)}</b></td><td colSpan={4} /></tr></tfoot>
+              <tfoot><tr><td colSpan={4} className="right"><b>Tổng giá trị</b></td><td className="num"><b>{fmtTien(d.don.tong)}</b></td>
+                {coGiaBht && <td className="num" title="Tổng theo giá Karofi bán BHT"><b>{d.don.tongGiaBht === null ? '—' : fmtTien(d.don.tongGiaBht)}</b></td>}<td colSpan={4} /></tr></tfoot>
             </table>
           </div>
           {d.thanhToan && <MucThanhToanDon don={d.don} tt={d.thanhToan} me={me} onDoi={xong} />}

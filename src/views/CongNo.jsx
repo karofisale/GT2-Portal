@@ -15,13 +15,16 @@ export default function CongNo({ me }) {
 
 function NhomBht({ ds }) {
   if (!ds.length) return null;
+  const coBht = ds.some((g) => 'giaoGiaBht' in g);
   return (
     <div className="card">
       <h3>Tổng kênh BHT (chỉ để xem — không đối chiếu số dư Puresys)</h3>
+      <p className="small muted">"Đã giao / Còn nợ" của đại lý tính theo giá BHT bán đại lý (số đại lý trả); cột "theo giá Karofi→BHT" là giá trị Karofi bán cho kênh BHT.</p>
       <div className="tablewrap"><table>
-        <thead><tr><th>BHT</th><th className="num">Số đại lý</th><th className="num">Đã giao</th><th className="num">Còn nợ</th><th className="num">Quá hạn</th><th className="num">Sắp đến hạn</th><th className="num">Điện chờ xác nhận</th></tr></thead>
+        <thead><tr><th>BHT</th><th className="num">Số đại lý</th><th className="num">Đã giao</th>{coBht && <th className="num" title="Giá trị đã giao tính theo giá Karofi bán BHT (doanh thu Karofi của kênh)">Đã giao theo giá Karofi→BHT</th>}<th className="num">Còn nợ</th><th className="num">Quá hạn</th><th className="num">Sắp đến hạn</th><th className="num">Điện chờ xác nhận</th></tr></thead>
         <tbody>{ds.map((g) => (
           <tr key={g.bht}><td><b>{g.bht}</b> <span className="muted">{g.ten}</span></td><td className="num">{g.soDaiLy}</td><td className="num">{fmtTien(g.tong)}</td>
+            {coBht && <td className="num">{fmtTien(g.giaoGiaBht)}{g.thieuGiaBht && <div className="small" style={{ color: 'var(--amber)' }} title="Có dòng chưa có giá Karofi bán BHT — tạm tính theo giá đại lý">⚠ thiếu giá BHT</div>}</td>}
             <td className="num"><b>{fmtTien(g.conNo)}</b></td><td className="num" style={g.quaHan > 0 ? { color: 'var(--rose)' } : null}>{g.quaHan > 0 ? fmtTien(g.quaHan) : '—'}</td>
             <td className="num">{g.sapDenHan > 0 ? fmtTien(g.sapDenHan) : '—'}</td><td className="num">{g.choXacNhan > 0 ? fmtTien(g.choXacNhan) : '—'}</td></tr>
         ))}</tbody>

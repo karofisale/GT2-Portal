@@ -133,11 +133,16 @@ function SanPham({ admin }) {
   const sp = useTai(() => (ma ? api('getSanPham', { doiTac: ma }) : Promise.resolve(null)), [ma]);
   const [text, setText] = useState('');
   const [thayThe, setThayThe] = useState(false);
+  const loai = (dt.data && (dt.data.items.find((x) => x.code === ma) || {}).loai) || '';
+  const laBht = loai === 'bht', laDl = loai === 'dai_ly';
+  const so = (v) => Number(String(v || '').replace(/[.,\s]/g, ''));
 
   async function nap() {
     const rows = text.split('\n').map((l) => l.replace(/\r/g, '')).filter((l) => l.trim()).map((l) => {
       const c = l.indexOf('\t') >= 0 ? l.split('\t') : l.split(';');
-      return { sku: (c[0] || '').trim(), name: (c[1] || '').trim(), category: (c[2] || '').trim(), gia: Number(String(c[3] || '').replace(/[.,\s]/g, '')) };
+      const r = { sku: (c[0] || '').trim(), name: (c[1] || '').trim(), category: (c[2] || '').trim(), gia: so(c[3]) };
+      if (laBht && String(c[4] || '').trim()) r.giaDaiLy = so(c[4]);   // BHT: cột 5 = giá BHT bán đại lý (trống = giữ giá cũ)
+      return r;
     }).filter((r) => r.sku.toLowerCase() !== 'mã' && r.sku.toLowerCase() !== 'sku');
     if (!rows.length) return;
     if (!(await hoi({ title: 'Nạp danh mục cho ' + ma, msg: rows.length + ' mã' + (thayThe ? '. Mã không có trong lần nạp này sẽ bị TẮT cho đối tác.' : ' (cập nhật + thêm mới).'), okText: 'Nạp' }))) return;
@@ -151,15 +156,27 @@ function SanPham({ admin }) {
       {ma && (sp.loading && !sp.data ? <Spinner /> : sp.error ? <Loi onRetry={sp.reload}>{sp.error}</Loi> : sp.data && (
         <>
           <div className="tablewrap" style={{ maxHeight: 360, overflow: 'auto' }}><table>
-            <thead><tr><th>Mã</th><th>Tên</th><th>Nhóm</th><th className="num">Giá</th><th className="num">Tồn riêng</th><th className="num">Tồn nhà máy</th></tr></thead>
-            <tbody>{sp.data.items.map((x) => <tr key={x.sku}><td><b>{x.sku}</b></td><td>{x.name}</td><td>{x.category}</td><td className="num">{fmtTien(x.gia)}</td><td className="num">{fmtNum(x.tonRieng)}</td><td className="num">{fmtNum(x.tonNhaMay)}</td></tr>)}
-              {!sp.data.items.length && <tr><td colSpan={6} className="muted">Đối tác này chưa có danh mục.</td></tr>}</tbody>
+            <thead><tr><th>Mã</th><th>Tên</th><th>Nhóm</th>
+              {laBht ? <><th className="num">Giá Karofi bán BHT</th><th className="num">Giá BHT bán đại lý</th></>
+                : laDl ? <><th className="num">Giá đại lý</th><th>Nguồn giá</th><th className="num">Giá Karofi bán BHT</th></> : <th className="num">Giá</th>}
+              <th className="num">Tồn riêng</th><th className="num">Tồn nhà máy</th></tr></thead>
+            <tbody>{sp.data.items.map((x) => <tr key={x.sku}><td><b>{x.sku}</b></td><td>{x.name}</td><td>{x.category}</td><td className="num">{fmtTien(x.gia)}</td>
+              {laBht && <td className="num">{x.giaDaiLy === null || x.giaDaiLy === undefined ? <span className="muted small">không bán đại lý</span> : fmtTien(x.giaDaiLy)}</td>}
+              {laDl && <><td className="small">{x.nguonGia === 'rieng' ? 'Giá riêng đại lý' : 'Theo giá chung BHT'}</td><td className="num">{x.giaBht === null || x.giaBht === undefined ? <span className="small" style={{ color: 'var(--rose)' }}>BHT chưa có giá</span> : fmtTien(x.giaBht)}</td></>}
+              <td className="num">{fmtNum(x.tonRieng)}</td><td className="num">{fmtNum(x.tonNhaMay)}</td></tr>)}
+              {!sp.data.items.length && <tr><td colSpan={8} className="muted">Đối tác này chưa có danh mục.</td></tr>}</tbody>
           </table></div>
           {admin && (
             <div className="card" style={{ marginTop: 12 }}>
               <h3>Nạp / cập nhật danh mục + giá (dán từ Excel)</h3>
-              <p className="small muted">Mỗi dòng: <b>Mã</b> ⇥ <b>Tên</b> ⇥ <b>Nhóm (category — dùng cho leadtime)</b> ⇥ <b>Giá</b>. Cột phân cách là Tab (copy từ Excel) hoặc dấu chấm phẩy.</p>
-              <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={'1000123\tMáy lọc A\tMáy\t1250000'} />
+              {laBht
+                ? <p className="small muted">Mỗi dòng: <b>Mã</b> ⇥ <b>Tên</b> ⇥ <b>Nhóm</b> ⇥ <b>Giá Karofi bán BHT</b> ⇥ <b>Giá BHT bán đại lý</b>. Giá bán đại lý áp CHUNG cho mọi đại lý thuộc {ma}
+                  (đại lý chỉ đặt được mã có giá này); để trống = giữ giá đang có. Đại lý có giá riêng thì chọn đại lý đó và nạp cột Giá.</p>
+                : laDl
+                  ? <p className="small muted">Chỉ nạp khi đại lý này có <b>giá RIÊNG khác giá chung của BHT</b>. Mỗi dòng: <b>Mã</b> ⇥ <b>Tên</b> ⇥ <b>Nhóm</b> ⇥ <b>Giá đại lý</b> — ghi đè giá bán đại lý của BHT cho mã đó.
+                    Giá Karofi bán BHT luôn lấy từ bảng giá BHT.</p>
+                  : <p className="small muted">Mỗi dòng: <b>Mã</b> ⇥ <b>Tên</b> ⇥ <b>Nhóm (category — dùng cho leadtime)</b> ⇥ <b>Giá</b>. Cột phân cách là Tab (copy từ Excel) hoặc dấu chấm phẩy.</p>}
+              <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder={laBht ? '1000123\tMáy lọc A\tMáy\t4000000\t4500000' : '1000123\tMáy lọc A\tMáy\t1250000'} />
               <label className="small"><input type="checkbox" checked={thayThe} onChange={(e) => setThayThe(e.target.checked)} /> Thay thế toàn bộ — tắt các mã của đối tác không có trong lần nạp này</label>
               <div className="actions"><button className="btn pri" disabled={dang || !text.trim()} onClick={nap}>Nạp danh mục</button></div>
             </div>

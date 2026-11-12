@@ -203,6 +203,7 @@ export function TheSo({ x }) {
   const o = [['Đã giao (xuất kho)', fmtTien(x.tong)], ['Đã trả (đã xác nhận)', fmtTien(x.daTra)], ['Còn nợ', fmtTien(x.conNo), x.conNo > 0 ? 'var(--navy)' : ''],
     ['Quá hạn', x.quaHan > 0 ? fmtTien(x.quaHan) + ' · ' + x.soNgayQuaHanMax + ' ngày' : '—', x.quaHan > 0 ? 'var(--rose)' : ''], ['Sắp đến hạn', x.sapDenHan > 0 ? fmtTien(x.sapDenHan) : '—', x.sapDenHan > 0 ? 'var(--amber)' : ''],
     ['Điện chờ xác nhận', x.choXacNhan > 0 ? fmtTien(x.choXacNhan) + ' (' + x.soDienCho + ')' : '—']];
+  if (x.loai === 'dai_ly' && x.giaoGiaBht !== undefined) o.push(['Đã giao theo giá Karofi→BHT', fmtTien(x.giaoGiaBht) + (x.thieuGiaBht ? ' ⚠' : '')]);
   if (x.hanMuc !== null && x.hanMuc !== undefined) o.push(['Hạn mức', fmtTien(x.hanMuc) + (x.vuotHanMuc > 0 ? ' · vượt ' + fmtTien(x.vuotHanMuc) : ''), x.vuotHanMuc > 0 ? 'var(--rose)' : '']);
   return <div className="stats">{o.map(([k, v, mau]) => <div key={k} className="stat"><div className="small muted">{k}</div><b style={mau ? { color: mau } : null}>{v}</b></div>)}</div>;
 }

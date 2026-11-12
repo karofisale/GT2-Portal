@@ -49,6 +49,7 @@ export function DanhMucKhach({ me }) {
   const [q, setQ] = useState('');
   const ds = useTai(() => api('getSanPham', { mien }), [mien]);
   const loc = ds.data ? ds.data.items.filter((x) => !q.trim() || (x.sku + ' ' + x.name + ' ' + x.category).toLowerCase().indexOf(q.trim().toLowerCase()) >= 0) : [];
+  const laBht = me.doiTac && me.doiTac.loai === 'bht';   // BHT: giá mua của Karofi + giá BHT bán đại lý
   return (
     <div>
       <div className="row">
@@ -58,13 +59,14 @@ export function DanhMucKhach({ me }) {
       {ds.loading && !ds.data ? <Spinner /> : ds.error ? <Loi onRetry={ds.reload}>{ds.error}</Loi> : (
         <div className="tablewrap">
           <table>
-            <thead><tr><th>Mã</th><th>Tên</th><th>Nhóm</th><th className="num">Đơn giá</th><th className="num">Tồn kho riêng{coMien ? ' (' + NHAN_MIEN[mien] + ')' : ''}</th><th>Nhà máy</th></tr></thead>
+            <thead><tr><th>Mã</th><th>Tên</th><th>Nhóm</th><th className="num">{laBht ? 'Giá mua (Karofi)' : 'Đơn giá'}</th>{laBht && <th className="num">Giá bán đại lý</th>}<th className="num">Tồn kho riêng{coMien ? ' (' + NHAN_MIEN[mien] + ')' : ''}</th><th>Nhà máy</th></tr></thead>
             <tbody>
               {loc.map((x) => (
-                <tr key={x.sku}><td><b>{x.sku}</b></td><td>{x.name}</td><td>{x.category}</td><td className="num">{fmtTien(x.gia)}</td><td className="num">{fmtNum(x.tonRieng)}</td>
+                <tr key={x.sku}><td><b>{x.sku}</b></td><td>{x.name}</td><td>{x.category}</td><td className="num">{fmtTien(x.gia)}</td>
+                  {laBht && <td className="num">{x.giaDaiLy === null || x.giaDaiLy === undefined ? <span className="muted small">—</span> : fmtTien(x.giaDaiLy)}</td>}<td className="num">{fmtNum(x.tonRieng)}</td>
                   <td>{x.nhaMayCo ? <Tag tone="emerald">Có hàng</Tag> : <Tag tone="gray">Hết</Tag>}</td></tr>
               ))}
-              {!loc.length && <tr><td colSpan={6} className="muted">Không có mã nào.</td></tr>}
+              {!loc.length && <tr><td colSpan={7} className="muted">Không có mã nào.</td></tr>}
             </tbody>
           </table>
         </div>
