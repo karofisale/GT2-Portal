@@ -10,11 +10,13 @@ import HvAdmin from './views/Admin';
 import KeHoach from './views/KeHoach';
 import KeToan from './views/KeToan';
 import CaiDat from './views/CaiDat';
+import CongNo from './views/CongNo';
 
 export default function App() {
   const ss = useMemo(() => sessionGt2(), []);
   const me = useTai(() => api('me'), []);
-  const menu = ss ? menuTheoVai(ss.role) : [];
+  // menu theo vai + loại đối tác (kênh BHT có thêm Công nợ) — loại biết sau khi tải 'me'
+  const menu = ss ? menuTheoVai(ss.role, me.data && me.data.doiTac ? me.data.doiTac.loai : '') : [];
   const [tab, setTab] = useState(() => { try { return window.localStorage.getItem('gt2.tab') || ''; } catch { return ''; } });
   const [capApp, setCapApp] = useState(false);
   const tabHienTai = menu.some((m) => m.key === tab) ? tab : (menu[0] && menu[0].key);
@@ -65,9 +67,10 @@ function Man({ tab, me, chuyen }) {
     case 'danhMuc': return <DanhMucKhach me={me} />;
     case 'hvAdmin': return <HvAdmin me={me} />;
     case 'keHoach': return <KeHoach />;
-    case 'keToan': return <KeToan />;
+    case 'keToan': return <KeToan me={me} />;
     case 'tatCaDon': return <DonList me={me} />;
     case 'caiDat': return <CaiDat me={me} />;
+    case 'congNo': return <CongNo me={me} />;
     default: return laKhach(me.role) ? <DatHang me={me} onXong={() => chuyen('donCuaToi')} /> : <DonList me={me} />;
   }
 }

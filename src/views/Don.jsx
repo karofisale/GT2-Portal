@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { Field, Modal, Spinner, Loi, Tag, useTai, useLam, useUi } from '../ui';
 import { fmtNgay, fmtNum, fmtTien, NHAN_MIEN, NHAN_LOAI, NHAN_DONG, laNoiBo } from '../utils/format';
 import DatHang from './DatHang';
+import { MucThanhToanDon } from './ThanhToan';
 
 const TRANG_THAI = [['', 'Tất cả trạng thái'], ['moi', 'Mới — chờ duyệt'], ['da_duyet', 'Đã duyệt / đang giao'], ['hoan_thanh', 'Hoàn thành'], ['huy', 'Đã huỷ']];
 
@@ -122,6 +123,7 @@ export function DonChiTiet({ id, me, onClose, onDoi }) {
               <tfoot><tr><td colSpan={4} className="right"><b>Tổng giá trị</b></td><td className="num"><b>{fmtTien(d.don.tong)}</b></td><td colSpan={4} /></tr></tfoot>
             </table>
           </div>
+          {d.thanhToan && <MucThanhToanDon don={d.don} tt={d.thanhToan} me={me} onDoi={xong} />}
           <details style={{ marginTop: 10 }}>
             <summary className="muted">Lịch sử đơn ({d.log.length})</summary>
             <table><tbody>{d.log.map((l, i) => <tr key={i}><td className="nowrap small">{fmtNgay(l.at)}</td><td className="small">{l.by} <span className="muted">({l.vai})</span></td><td className="small">{l.noiBo && '🔒 '}{l.chiTiet}</td></tr>)}</tbody></table>

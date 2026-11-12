@@ -1,10 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { api } from '../services/api';
 import { Field, Modal, Spinner, Loi, useTai, useLam, useUi } from '../ui';
-import { fmtNgay, fmtNum, NHAN_MIEN, homNay } from '../utils/format';
+import { fmtNgay, fmtNum, fmtTien, NHAN_MIEN, homNay } from '../utils/format';
+import { BangThanhToan } from './ThanhToan';
 
-/** DO & xuất kho (Kế toán / admin): nhập số DO cho các dòng đã báo, rồi đánh dấu DO đã xuất kho (PGI) trên SAP = hoàn thành. */
-export default function KeToan() {
+/**
+ * DO, xuất kho & tiền về (Kế toán / admin): nhập số DO cho các dòng đã báo, đánh dấu DO đã xuất kho (PGI) trên SAP = hoàn thành;
+ * pha 2: xác nhận / từ chối điện chuyển tiền của đại lý / BHT (cũ nhất trước).
+ */
+export default function KeToan({ me }) {
   const { hoi } = useUi();
   const [dang, lam] = useLam();
   const hv = useTai(() => api('getHangViecKeToan'), []);
@@ -34,8 +38,14 @@ export default function KeToan() {
 
   if (hv.loading && !d) return <Spinner />;
   if (hv.error) return <Loi onRetry={hv.reload}>{hv.error}</Loi>;
+  const dien = d.choXacNhanTien || [];
   return (
     <div>
+      <div className="card">
+        <h3>Điện chuyển tiền chờ xác nhận ({dien.length}{dien.length ? ' · ' + fmtTien(dien.reduce((a, t) => a + t.soTien, 0)) : ''})</h3>
+        {dien.length ? <BangThanhToan ds={dien.map((t) => ({ ...t, trangThai: 'cho', nguon: 'dien', soTienXn: null, ngayTienVe: '', lyDoTuChoi: '', noiDung: (t.doiTacTen ? t.doiTac + ' · ' + t.doiTacTen + (t.cha ? ' (thuộc ' + t.cha + ')' : '') : '') + (t.noiDung ? ' — ' + t.noiDung : '') }))} me={me} onDoi={hv.reload} />
+          : <p className="muted small">Không có điện nào chờ xác nhận.</p>}
+      </div>
       <div className="card">
         <h3>Chờ tạo DO ({d.choDo.length})</h3>
         <div className="tablewrap"><table>

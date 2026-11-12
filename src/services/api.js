@@ -5,7 +5,8 @@ export const API_URL = (import.meta.env && import.meta.env.VITE_GT2_API) || 'htt
 
 /** Hàm GHI không được tự thử lại khi mất mạng giữa đường (có thể đã chạy xong rồi) — cùng nguyên tắc của OEM. */
 const GHI = new Set(['createDon', 'updateDon', 'cancelDonKhach', 'approveDon', 'cancelDonAdmin', 'setSoSap', 'setNgayGiao', 'requestDo', 'saveDo', 'deleteDo', 'markPgi',
-  'saveCaiDat', 'saveDoiTac', 'saveKho', 'importDanhMuc', 'saveLeadtime', 'saveLyDo', 'saveNgayNghi']);
+  'saveCaiDat', 'saveDoiTac', 'saveKho', 'importDanhMuc', 'saveLeadtime', 'saveLyDo', 'saveNgayNghi',
+  'guiDienThanhToan', 'rutDienThanhToan', 'xacNhanThanhToan', 'tuChoiThanhToan', 'ghiThanhToanTay']);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export class LoiApi extends Error {}

@@ -24,11 +24,25 @@ npm test                                  # hàm thuần của giao diện
 cd ../Karofi-ID/test && node gt2-api-pure.test.mjs && node gt2-api.test.mjs && node quan-tri-gt2.test.mjs
 ```
 
-## Triển khai (cần người có quyền — chưa làm)
+## Triển khai
 
-1. Chạy `Karofi-ID/supabase/chay-dot32-gt2-nen-tang-2026-11-11.sql` trong Supabase SQL Editor (thêm 3 cột `gt2_*` vào `kid.users` + schema `gt2`).
-2. Deploy hàm: `npx supabase functions deploy gt2-api --no-verify-jwt` và `npx supabase functions deploy karofi-id --no-verify-jwt`; đặt secret `GT2_STOCK_SECRET` (chuỗi ngẫu nhiên dài) nếu muốn máy SAP đẩy tồn kho.
-3. Tạo project Cloudflare Pages tên `karofi-gt2` (đúng tên đã khai trong `Karofi-VHKD/_worker.js`), build `npm run build`, thư mục `dist`; sau đó deploy lại cổng VHKD để route `/GT2` có hiệu lực.
-4. Đồng bộ lớp phiên: trong `Karofi-ID`, `node tools/dong-bo-lop-phien.mjs --ghi` (đã sinh `src/services/karofiSessionCore.js` — đừng sửa tay).
-5. Vào Karofi ID > Quản trị > Thêm / sửa tài khoản > tick "GT2 Portal": vai `partner` / `dealer` + **mã đối tác** (NSKX, 3T, BHT, mã đại lý); nhân viên Karofi: `admin`, `planner`, `account`, `qc`, `viewer` (không gắn mã đối tác).
-6. Trong GT2 Portal (admin): nhập danh mục kho, đối tác (đại lý + hạn mức), danh mục sản phẩm + giá riêng từng đối tác, leadtime theo category, lịch nghỉ lễ.
+Đang chạy: cổng `https://sales.karofiglobal.com/GT2/` → Cloudflare **Worker** `karofi-gt2` (`karofi-gt2.hai-cao.workers.dev`, phục vụ `dist/` qua `wrangler.jsonc`;
+build command `npm run build`). Push nhánh `main` là Cloudflare tự build + deploy — vì vậy **chỉ push sau khi backend tương ứng đã lên**.
+
+Thứ tự khi có thay đổi backend / CSDL:
+1. Chạy SQL mới trong Supabase SQL Editor (người có quyền): đợt 32 `chay-dot32-gt2-nen-tang-2026-11-11.sql` (đã chạy), **đợt 33 `chay-dot33-gt2-cong-no-2026-11-12.sql`** (pha 2 — công nợ).
+2. Deploy hàm: `npx supabase functions deploy gt2-api --no-verify-jwt` (và `karofi-id` khi đổi quyền).
+3. Push `GT2-Portal` → Cloudflare deploy giao diện.
+4. Đồng bộ lớp phiên khi đổi `Karofi-ID/web/*`: `node tools/dong-bo-lop-phien.mjs --ghi` (sinh `src/services/karofiSessionCore.js` — đừng sửa tay).
+
+Cấp quyền: Karofi ID > Quản trị > Thêm / sửa tài khoản > tick "GT2 Portal": `partner` / `dealer` + **mã đối tác** (NSKX, 3T, BHT, mã đại lý);
+nhân viên Karofi: `admin`, `planner`, `account` (kế toán: DO, xuất kho, xác nhận tiền về), `qc`, `viewer`.
+Dữ liệu đầu vào (admin, màn Danh mục & cài đặt): đối tác (đại lý + hạn mức), kho, danh mục + giá riêng từng đối tác, leadtime, lịch nghỉ lễ.
+
+## Pha 2 — công nợ kênh BHT (12/11/2026)
+
+- Nợ ghi theo **DO đã xuất kho (PGI)**, hạn = ngày xuất kho + `han_thanh_toan_ngay` của đối tác (mặc định 5). Sổ cho đối tác loại BHT và đại lý BHT.
+- Đại lý / BHT **gửi điện chuyển tiền** (ảnh / PDF ≤ 4 MB, gắn MỘT đơn) ở màn "Công nợ & thanh toán" hoặc mục Thanh toán của đơn → Kế toán xác nhận
+  (sửa được số tiền / ngày) hoặc từ chối có lý do ở màn "DO, xuất kho & tiền về". Kế toán ghi tay được khoản thu không có điện.
+- Tiền của đơn nào chỉ trừ nợ đơn đó (khoản hạn sớm nhất trước); trả trước khi giao hiện là "trả trước".
+- Cảnh báo khi admin duyệt đơn đại lý dùng dư nợ + quá hạn thật từ sổ (vẫn chỉ cảnh báo, tick "vẫn duyệt").
