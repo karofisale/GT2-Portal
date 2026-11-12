@@ -26,13 +26,16 @@ export function menuTheoVai(role, loai) {
   if (laKhach(role)) {
     const k = [{ key: 'datHang', nhan: 'Đặt hàng' }, { key: 'donCuaToi', nhan: 'Đơn của tôi' }, { key: 'theoMa', nhan: 'Theo mã hàng' }, { key: 'danhMuc', nhan: 'Danh mục & tồn kho' }];
     if (coSoCongNo(loai)) k.splice(2, 0, { key: 'congNo', nhan: 'Công nợ & thanh toán' });
+    if (loai === '3t') k.splice(2, 0, { key: 'traHang', nhan: 'Trả hàng' });
     return k;
   }
   const m = [];
+  if (role === 'qc') m.push({ key: 'traHang', nhan: 'Hàng trả 3T' });
   if (role === 'admin') m.push({ key: 'hvAdmin', nhan: 'Việc của Admin' });
   if (role === 'admin' || role === 'planner') m.push({ key: 'keHoach', nhan: 'Kế hoạch giao hàng' });
   if (role === 'admin' || role === 'account') m.push({ key: 'keToan', nhan: 'DO, xuất kho & tiền về' });
   if (role === 'admin' || role === 'account' || role === 'viewer') m.push({ key: 'congNo', nhan: 'Công nợ BHT' });
+  if (role === 'admin' || role === 'viewer') m.push({ key: 'traHang', nhan: 'Trả hàng 3T' });
   m.push({ key: 'tatCaDon', nhan: 'Tất cả đơn' });
   m.push({ key: 'theoMa', nhan: 'Theo mã hàng' });
   if (role === 'admin' || role === 'planner') m.push({ key: 'caiDat', nhan: 'Danh mục & cài đặt' });
@@ -87,3 +90,25 @@ export function docTien(s) {
 /** Tệp điện chuyển tiền: loại được nhận + kích thước tối đa (máy chủ cũng kiểm theo chữ ký tệp). */
 export const TEP_TOI_DA = 4 * 1024 * 1024;
 export const laTepHopLe = (mime) => ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].indexOf(String(mime || '')) >= 0;
+
+/* ---------- trả hàng 3T (pha 3) ---------- */
+export const TONE_TRA = { moi: 'amber', tu_choi: 'rose', da_duyet: 'blue', da_kiem: 'emerald', huy: 'gray' };
+export const NHAN_NGUON_GIA = { sap: 'SAP bình quân 12 tháng', danh_muc: 'Giá danh mục (có thể gồm VAT)', admin: 'Admin sửa', '': 'Chưa có' };
+
+/**
+ * Đọc danh sách trả dán từ Excel: mỗi dòng "mã <tab> SL <tab> số HĐ / DO gốc <tab> lý do" (lý do có thể trống; cũng nhận cách bằng khoảng trắng
+ * cho 3 cột đầu). Trả { lines: [{ sku, sl, soHd, lyDo }], loi: [dòng sai] }. Bản kiểm chính thức do máy chủ làm.
+ */
+export function docDongTra(text) {
+  const lines = [], loi = [];
+  String(text || '').split(/\r?\n/).forEach((raw) => {
+    const t = raw.trim();
+    if (!t) return;
+    let c = t.indexOf('\t') >= 0 ? t.split('\t').map((x) => x.trim()) : null;
+    if (!c) { const m = /^(\S+)\s+([\d.,]+)\s+(\S+)\s*(.*)$/.exec(t); c = m ? [m[1], m[2], m[3], m[4]] : [t]; }
+    const sl = Number(String(c[1] || '').replace(/[.,](?=\d{3}(\D|$))/g, '').replace(',', '.'));
+    if (!c[0] || !(sl > 0) || !c[2]) { loi.push(t); return; }
+    lines.push({ sku: c[0], sl, soHd: c[2], lyDo: (c[3] || '').trim() });
+  });
+  return { lines, loi };
+}

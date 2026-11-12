@@ -6,7 +6,7 @@ import { fmtNgay, fmtTien, homNay, layNguoi, nhoNguoi, sdtHopLe, docTien, laTepH
 /* ================= tệp điện ================= */
 
 /** Đọc tệp người dùng chọn -> { ten, mime, base64 }. Ảnh lớn hơn 1,2 MB được thu nhỏ (cạnh dài ≤ 2000px, JPEG) cho nhẹ đường truyền. */
-async function docTep(file) {
+export async function docTep(file) {
   if (!file) throw new Error('Chưa chọn tệp.');
   if (!laTepHopLe(file.type)) throw new Error('Chỉ nhận ảnh (JPG, PNG, WEBP) hoặc PDF.');
   let blob = file, ten = file.name || 'dien-chuyen-tien';
@@ -46,20 +46,23 @@ function ChonTep({ tep, setTep, batBuoc }) {
 }
 
 /** Xem điện chuyển tiền đã gửi (ảnh hiện ngay; PDF hiện trong khung + nút tải). */
-export function XemDien({ id, onClose }) {
+export const XemDien = ({ id, onClose }) => <XemTep id={id} fn="getTepThanhToan" title="Điện chuyển tiền" onClose={onClose} />;
+
+/** Xem một tệp lưu trong GT2 (fn = API trả { ten, mime, base64 }). */
+export function XemTep({ id, fn, title, onClose }) {
   const [st, setSt] = useState({ loading: true, error: '', tep: null, url: '' });
   useEffect(() => {
     let url = '', huy = false;
-    api('getTepThanhToan', id).then((t) => {
+    api(fn, id).then((t) => {
       const bin = atob(t.base64), arr = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
       url = URL.createObjectURL(new Blob([arr], { type: t.mime }));
       if (!huy) setSt({ loading: false, error: '', tep: t, url });
     }).catch((e) => { if (!huy) setSt({ loading: false, error: e.message, tep: null, url: '' }); });
     return () => { huy = true; if (url) URL.revokeObjectURL(url); };
-  }, [id]);
+  }, [id, fn]);
   return (
-    <Modal title="Điện chuyển tiền" wide onClose={onClose} actions={st.url ? <><a className="btn" href={st.url} download={st.tep.ten}>Tải về</a><button className="btn" onClick={onClose}>Đóng</button></> : null}>
+    <Modal title={title || 'Tệp đính kèm'} wide onClose={onClose} actions={st.url ? <><a className="btn" href={st.url} download={st.tep.ten}>Tải về</a><button className="btn" onClick={onClose}>Đóng</button></> : null}>
       {st.loading ? <Spinner /> : st.error ? <Loi>{st.error}</Loi> : st.tep.mime === 'application/pdf'
         ? <iframe title={st.tep.ten} src={st.url} style={{ width: '100%', height: '70vh', border: '1px solid var(--line)', borderRadius: 8 }} />
         : <img alt={st.tep.ten} src={st.url} style={{ maxWidth: '100%', maxHeight: '75vh', display: 'block', margin: '0 auto', borderRadius: 8 }} />}

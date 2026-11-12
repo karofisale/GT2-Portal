@@ -11,6 +11,7 @@ import KeHoach from './views/KeHoach';
 import KeToan from './views/KeToan';
 import CaiDat from './views/CaiDat';
 import CongNo from './views/CongNo';
+import TraHang from './views/TraHang';
 
 export default function App() {
   const ss = useMemo(() => sessionGt2(), []);
@@ -71,6 +72,7 @@ function Man({ tab, me, chuyen }) {
     case 'tatCaDon': return <DonList me={me} />;
     case 'caiDat': return <CaiDat me={me} />;
     case 'congNo': return <CongNo me={me} />;
+    case 'traHang': return <TraHang me={me} />;
     default: return laKhach(me.role) ? <DatHang me={me} onXong={() => chuyen('donCuaToi')} /> : <DonList me={me} />;
   }
 }

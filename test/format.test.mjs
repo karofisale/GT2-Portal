@@ -10,18 +10,24 @@ check('fmtNgay chuỗi lạ / rỗng', F.fmtNgay('abc') === 'abc' && F.fmtNgay('
 check('fmtTien rỗng khi không phải số', F.fmtTien('') === '' && F.fmtTien(null) === '' && F.fmtTien('x') === '');
 check('fmtTien có đơn vị', /đ$/.test(F.fmtTien(1500)) && /1[.,\s]?500/.test(F.fmtTien(1500)), F.fmtTien(1500));
 check('fmtNum 0 vẫn hiện', F.fmtNum(0) === '0');
-check('menu khách: đặt hàng, đơn, theo mã, danh mục', F.menuTheoVai('partner', 'nskx').map((m) => m.key).join() === 'datHang,donCuaToi,theoMa,danhMuc' && F.menuTheoVai('partner', '3t').length === 4);
+check('menu khách: đặt hàng, đơn, theo mã, danh mục', F.menuTheoVai('partner', 'nskx').map((m) => m.key).join() === 'datHang,donCuaToi,theoMa,danhMuc' && F.menuTheoVai('partner', '3t').length === 5);
 check('menu khách kênh BHT (BHT / đại lý): thêm Công nợ sau Đơn của tôi', F.menuTheoVai('dealer', 'dai_ly').map((m) => m.key).join() === 'datHang,donCuaToi,congNo,theoMa,danhMuc' && F.menuTheoVai('partner', 'bht').some((m) => m.key === 'congNo'));
 check('menu Công nợ BHT: admin / kế toán / viewer có; planner không', ['admin', 'account', 'viewer'].every((r) => F.menuTheoVai(r).some((m) => m.key === 'congNo')) && !F.menuTheoVai('planner').some((m) => m.key === 'congNo'));
 check('tinhTrangHan: quá hạn > sắp đến hạn > trong hạn > đã trả đủ / trả trước', F.tinhTrangHan({ conNo: 5, quaHanNgay: 3 }).nhan === 'Quá hạn 3 ngày' && F.tinhTrangHan({ conNo: 5, soNgayQuaHanMax: 2, sapDenHan: 9 }).tone === 'rose' &&
   F.tinhTrangHan({ conNo: 5, sapDenHan: 5 }).nhan === 'Sắp đến hạn' && F.tinhTrangHan({ conNo: 5, sapDenHan: false }).nhan === 'Trong hạn' && F.tinhTrangHan({ conNo: 0 }).nhan === 'Đã trả đủ' && F.tinhTrangHan({ conNo: 0, traTruoc: 9 }).nhan === 'Trả trước');
 check('hanGanNhat: khoản đầu còn nợ', F.hanGanNhat({ khoans: [{ han: '2026-11-01', conNo: 0 }, { han: '2026-11-09', conNo: 10 }] }) === '2026-11-09' && F.hanGanNhat({ khoans: [] }) === '');
 check('docTien: 1.250.000 / 1,250,000 / 1250000đ / 1250,5', F.docTien('1.250.000') === 1250000 && F.docTien('1,250,000') === 1250000 && F.docTien('1 250 000 đ') === 1250000 && F.docTien('1250,5') === 1250.5 && isNaN(F.docTien('abc')) && isNaN(F.docTien('')));
+check('menu 3T có Trả hàng; đại lý không', F.menuTheoVai('partner', '3t').some((m) => m.key === 'traHang') && !F.menuTheoVai('dealer', 'dai_ly').some((m) => m.key === 'traHang'));
+check('menu nội bộ Trả hàng 3T: admin / qc / viewer; kế toán / planner không', ['admin', 'qc', 'viewer'].every((r) => F.menuTheoVai(r).some((m) => m.key === 'traHang')) && !['account', 'planner'].some((r) => F.menuTheoVai(r).some((m) => m.key === 'traHang')));
+const dt = F.docDongTra('1000101\t10\tHD001\tRò nước\n\n2000201 5 HD002 Hết hạn dùng\n3000301\t1.000\tDO9\t\nsai dòng\n4000401\t0\tHD1');
+
+check('docDongTra: tab / khoảng trắng, lý do trống được, SL 1.000, dòng sai + SL 0 báo lỗi', dt.lines.length === 3 && dt.lines[0].lyDo === 'Rò nước' && dt.lines[1].soHd === 'HD002' && dt.lines[1].lyDo === 'Hết hạn dùng' &&
+  dt.lines[2].sl === 1000 && dt.lines[2].lyDo === '' && dt.loi.length === 2, dt);
 check('laTepHopLe: ảnh + PDF', F.laTepHopLe('image/png') && F.laTepHopLe('application/pdf') && !F.laTepHopLe('text/plain'));
 check('menu admin có việc admin + kế hoạch + kế toán + cài đặt', ['hvAdmin', 'keHoach', 'keToan', 'caiDat'].every((k) => F.menuTheoVai('admin').some((m) => m.key === k)));
 check('menu planner: kế hoạch + cài đặt, không có việc admin / kế toán', (() => { const k = F.menuTheoVai('planner').map((m) => m.key); return k.includes('keHoach') && k.includes('caiDat') && !k.includes('hvAdmin') && !k.includes('keToan'); })());
 check('menu kế toán: DO, không có kế hoạch', (() => { const k = F.menuTheoVai('account').map((m) => m.key); return k.includes('keToan') && !k.includes('keHoach'); })());
-check('menu viewer chỉ xem: công nợ + tất cả đơn + theo mã', F.menuTheoVai('viewer').map((m) => m.key).join() === 'congNo,tatCaDon,theoMa');
+check('menu viewer chỉ xem: công nợ + tất cả đơn + theo mã', F.menuTheoVai('viewer').map((m) => m.key).join() === 'congNo,traHang,tatCaDon,theoMa');
 check('laNoiBo / laKhach', F.laNoiBo('planner') && !F.laNoiBo('partner') && F.laKhach('dealer') && !F.laKhach('admin'));
 check('toneClass: tone lạ -> gray', F.toneClass('xyz') === 'tag tag-gray' && F.toneClass('amber') === 'tag tag-amber');
 check('demDongDan bỏ dòng trống', F.demDongDan('a 1\n\n b 2\n  \n') === 2);

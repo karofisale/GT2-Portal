@@ -3,7 +3,7 @@ import { api } from '../services/api';
 import { Field, Modal, Spinner, Loi, Tag, useTai, useLam, useUi } from '../ui';
 import { fmtNgay, fmtNum, fmtTien, NHAN_LOAI } from '../utils/format';
 
-const TABS = [['doiTac', 'Đối tác'], ['kho', 'Kho'], ['sanPham', 'Sản phẩm & giá'], ['leadtime', 'Leadtime'], ['lyDo', 'Lý do chưa có ngày'], ['ngayNghi', 'Ngày nghỉ lễ'], ['thamSo', 'Tham số']];
+const TABS = [['doiTac', 'Đối tác'], ['kho', 'Kho'], ['sanPham', 'Sản phẩm & giá'], ['leadtime', 'Leadtime'], ['lyDo', 'Lý do chưa có ngày'], ['ngayNghi', 'Ngày nghỉ lễ'], ['ketLuanQc', 'Kết luận QC'], ['thamSo', 'Tham số']];
 
 /** Danh mục & cài đặt. Admin sửa tất cả; planner chỉ sửa leadtime (các mục khác chỉ xem). */
 export default function CaiDat({ me }) {
@@ -17,6 +17,7 @@ export default function CaiDat({ me }) {
       {tab === 'sanPham' && <SanPham admin={admin} />}
       {tab === 'leadtime' && <Leadtime />}
       {tab === 'lyDo' && <LyDo admin={admin} />}
+      {tab === 'ketLuanQc' && <LyDo admin={admin} fnDoc="getKetLuanQc" fnLuu="saveKetLuanQc" nhan="kết luận" />}
       {tab === 'ngayNghi' && <NgayNghi admin={admin} />}
       {tab === 'thamSo' && <ThamSo admin={admin} />}
     </div>
@@ -199,21 +200,22 @@ function Leadtime() {
 }
 
 /* ---------- lý do ---------- */
-function LyDo({ admin }) {
-  const t = useTai(() => api('getLyDo'), []);
+/** Danh mục mã + tên bật / tắt được: lý do chưa có ngày giao (mặc định) hoặc kết luận QC hàng trả (fnDoc / fnLuu). */
+function LyDo({ admin, fnDoc = 'getLyDo', fnLuu = 'saveLyDo', nhan = 'lý do' }) {
+  const t = useTai(() => api(fnDoc), [fnDoc]);
   const [dang, lam] = useLam();
   const [f, setF] = useState({ code: '', ten: '' });
-  const luu = async (x) => { if (await lam(() => api('saveLyDo', x), 'Đã lưu.')) { setF({ code: '', ten: '' }); t.reload(); } };
+  const luu = async (x) => { if (await lam(() => api(fnLuu, x), 'Đã lưu.')) { setF({ code: '', ten: '' }); t.reload(); } };
   return (
     <Khung t={t}>
       <div className="tablewrap"><table>
-        <thead><tr><th>Mã</th><th>Lý do (khách không thấy mã)</th><th>Đang dùng</th><th /></tr></thead>
+        <thead><tr><th>Mã</th><th>Tên {nhan} (khách không thấy mã)</th><th>Đang dùng</th><th /></tr></thead>
         <tbody>{t.data && t.data.items.map((x) => <tr key={x.code}><td>{x.code}</td><td>{x.ten}</td><td>{x.active ? 'Có' : 'Tắt'}</td>
           <td className="right">{admin && <button className="btn sm" onClick={() => luu({ ...x, active: !x.active })}>{x.active ? 'Tắt' : 'Bật'}</button>}</td></tr>)}</tbody>
       </table></div>
-      {admin && <div className="card" style={{ marginTop: 12 }}><h3>Thêm lý do</h3><div className="row">
+      {admin && <div className="card" style={{ marginTop: 12 }}><h3>Thêm {nhan}</h3><div className="row">
         <Field label="Mã (a-z, 0-9, _)"><input value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} /></Field>
-        <Field label="Tên lý do" style={{ minWidth: 280 }}><input value={f.ten} onChange={(e) => setF({ ...f, ten: e.target.value })} /></Field>
+        <Field label={'Tên ' + nhan} style={{ minWidth: 280 }}><input value={f.ten} onChange={(e) => setF({ ...f, ten: e.target.value })} /></Field>
         <button className="btn pri" style={{ marginBottom: 8 }} disabled={dang || !f.code.trim() || !f.ten.trim()} onClick={() => luu(f)}>Thêm</button></div></div>}
     </Khung>
   );
