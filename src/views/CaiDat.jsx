@@ -110,15 +110,23 @@ function Kho({ admin }) {
   );
 }
 function FormKho({ v, dts, onClose, onXong }) {
+  const { hoi } = useUi();
   const [dang, lam] = useLam();
   const [f, setF] = useState(v);
   const set = (k, x) => setF((o) => ({ ...o, [k]: x }));
-  const luu = async () => { if (await lam(() => api('saveKho', f), 'Đã lưu kho.')) onXong(); };
+  // Sửa kho đã có: gửi kèm khoá cũ để đổi được Plant / Sloc (nhập nhầm plant). Tồn của khoá cũ bị bỏ — máy SAP lấy lại ở lượt sau.
+  const doiKhoa = !v.moi && (f.plant.trim() !== v.plant || f.sloc.trim() !== v.sloc);
+  const luu = async () => { if (await lam(() => api('saveKho', v.moi ? f : { ...f, cu: { plant: v.plant, sloc: v.sloc } }), 'Đã lưu kho.')) onXong(); };
+  const xoa = async () => {
+    if (!(await hoi({ title: 'Xoá kho ' + v.plant + '/' + v.sloc + '?', msg: 'Dùng khi nhập nhầm. Tồn kho đã lấy của kho này cũng bị xoá. Kho đúng mà tạm ngừng thì bỏ tick "Đang dùng" thay vì xoá.', okText: 'Xoá kho', danger: true }))) return;
+    if (await lam(() => api('deleteKho', { plant: v.plant, sloc: v.sloc }), 'Đã xoá kho ' + v.plant + '/' + v.sloc + '.')) onXong();
+  };
   return (
-    <Modal title={v.moi ? 'Thêm kho' : 'Sửa kho ' + v.plant + '/' + v.sloc} onClose={onClose} actions={<><button className="btn" onClick={onClose}>Đóng</button><button className="btn pri" disabled={dang} onClick={luu}>Lưu</button></>}>
+    <Modal title={v.moi ? 'Thêm kho' : 'Sửa kho ' + v.plant + '/' + v.sloc} onClose={onClose}
+      actions={<>{!v.moi && <button className="btn dan" disabled={dang} onClick={xoa} style={{ marginRight: 'auto' }}>Xoá kho</button>}<button className="btn" onClick={onClose}>Đóng</button><button className="btn pri" disabled={dang} onClick={luu}>Lưu</button></>}>
       <div className="row">
-        <Field label="Plant *"><input value={f.plant} disabled={!v.moi} onChange={(e) => set('plant', e.target.value)} style={{ width: 90 }} /></Field>
-        <Field label="Sloc *"><input value={f.sloc} disabled={!v.moi} onChange={(e) => set('sloc', e.target.value)} style={{ width: 90 }} /></Field>
+        <Field label="Plant *"><input value={f.plant} onChange={(e) => set('plant', e.target.value)} style={{ width: 90 }} /></Field>
+        <Field label="Sloc *"><input value={f.sloc} onChange={(e) => set('sloc', e.target.value)} style={{ width: 90 }} /></Field>
         <Field label="Loại"><select value={f.loai} onChange={(e) => set('loai', e.target.value)}><option value="rieng">Kho riêng</option><option value="nha_may">Nhà máy</option></select></Field>
       </div>
       {f.loai === 'rieng' && (
@@ -129,6 +137,7 @@ function FormKho({ v, dts, onClose, onXong }) {
       )}
       <Field label="Tên kho"><input value={f.ten} onChange={(e) => set('ten', e.target.value)} /></Field>
       <label><input type="checkbox" checked={f.active} onChange={(e) => set('active', e.target.checked)} /> Đang dùng</label>
+      {doiKhoa && <div className="notice warn" style={{ marginTop: 8 }}>Đổi kho {v.plant}/{v.sloc} → {f.plant.trim()}/{f.sloc.trim()}. Tồn đã lấy của {v.plant}/{v.sloc} sẽ bị bỏ; bấm "Đồng bộ ngay" ở Kết nối SAP để lấy tồn kho mới.</div>}
     </Modal>
   );
 }
