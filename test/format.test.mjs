@@ -27,7 +27,9 @@ check('laTepHopLe: ảnh + PDF', F.laTepHopLe('image/png') && F.laTepHopLe('appl
 check('menu admin có việc admin + kế hoạch + kế toán + cài đặt', ['hvAdmin', 'keHoach', 'keToan', 'caiDat'].every((k) => F.menuTheoVai('admin').some((m) => m.key === k)));
 check('menu planner: kế hoạch + cài đặt, không có việc admin / kế toán', (() => { const k = F.menuTheoVai('planner').map((m) => m.key); return k.includes('keHoach') && k.includes('caiDat') && !k.includes('hvAdmin') && !k.includes('keToan'); })());
 check('menu kế toán: DO, không có kế hoạch', (() => { const k = F.menuTheoVai('account').map((m) => m.key); return k.includes('keToan') && !k.includes('keHoach'); })());
-check('menu viewer chỉ xem: công nợ + tất cả đơn + theo mã', F.menuTheoVai('viewer').map((m) => m.key).join() === 'congNo,traHang,tatCaDon,theoMa');
+check('menu viewer chỉ xem: công nợ + trả hàng + tất cả đơn + theo mã + báo cáo kênh', F.menuTheoVai('viewer').map((m) => m.key).join() === 'congNo,traHang,tatCaDon,theoMa,baoCao');
+check('menu Báo cáo kênh: nội bộ trừ Kho / QC; khách không có', ['admin', 'planner', 'account', 'viewer'].every((r) => F.menuTheoVai(r).some((m) => m.key === 'baoCao'))
+  && !F.menuTheoVai('qc').some((m) => m.key === 'baoCao') && !F.menuTheoVai('partner', 'nskx').some((m) => m.key === 'baoCao'));
 check('laNoiBo / laKhach', F.laNoiBo('planner') && !F.laNoiBo('partner') && F.laKhach('dealer') && !F.laKhach('admin'));
 check('toneClass: tone lạ -> gray', F.toneClass('xyz') === 'tag tag-gray' && F.toneClass('amber') === 'tag tag-amber');
 check('demDongDan bỏ dòng trống', F.demDongDan('a 1\n\n b 2\n  \n') === 2);
@@ -37,6 +39,19 @@ const kho = (() => { const m = new Map(); return { setItem: (k, v) => m.set(k, v
 F.nhoNguoi(kho, { ten: 'Nguyễn A', sdt: '0901234567' });
 check('nhớ / đọc người thao tác', F.layNguoi(kho).ten === 'Nguyễn A' && F.layNguoi(kho).sdt === '0901234567');
 check('đọc người khi chưa có / hỏng', F.layNguoi({ getItem: () => 'rác{' }).ten === '' && F.layNguoi({ getItem: () => { throw new Error('x'); } }).ten === '');
+
+// ---- đợt 38: nhập đơn cũ, báo cáo, Excel ----
+const bd = F.docBangDonCu([['Mã đơn cũ', 'Mã đối tác', 'Ngày đặt', 'Mã hàng', 'SL', 'Đơn giá (bỏ trống = giá hiện hành)', 'Ngày xuất kho'], ['Asia 07', 'ASIA', new Date(2026, 9, 5), '1000101', 3, '', '07/10/2026'], ['', '', '', '', '', '', '']]);
+check('docBangDonCu: khớp tiêu đề không dấu / bỏ ngoặc, ngày Date -> ISO, bỏ dòng trống', bd.thieuCot.length === 0 && bd.rows.length === 1 && bd.rows[0].ngayDat === '2026-10-05' && bd.rows[0].sl === 3 && bd.rows[0].donGia === '' && bd.rows[0].ngayXuat === '07/10/2026', bd);
+check('docBangDonCu: báo thiếu cột bắt buộc', F.docBangDonCu([['ma don cu', 'SL'], ['x', 1]]).thieuCot.join() === 'Mã đối tác,Ngày đặt,Mã hàng', F.docBangDonCu([['ma don cu', 'SL'], ['x', 1]]));
+check('tachBangDan: tách tab, bỏ dòng trống', JSON.stringify(F.tachBangDan('a\tb\n\nc\td\r\n')) === JSON.stringify([['a', 'b'], ['c', 'd']]));
+check('fmtPct', F.fmtPct(30) === '30%' && F.fmtPct(null) === '—' && F.fmtPct(12.34).startsWith('12,3'));
+const X = await import('../src/utils/excel.js');
+const bx = X.bangXuat([{ key: 'ma', nhan: 'Mã' }, { key: 'sl', nhan: 'SL', kieu: 'so' }, { key: 'ngay', nhan: 'Ngày', kieu: 'ngay' }, { nhan: 'Tính', lay: (r) => r.sl * 2 }],
+  [{ ma: 'A', sl: '3', ngay: '2026-11-16 08:30' }, { ma: 'B', sl: '', ngay: 'lạ' }]);
+check('bangXuat: tiêu đề, số, ngày -> Date, ô rỗng, cột tính', bx.aoa[0].join() === 'Mã,SL,Ngày,Tính' && bx.aoa[1][1] === 3 && bx.aoa[1][2] instanceof Date && bx.aoa[1][2].getHours() === 8 && bx.aoa[1][2].getDate() === 16
+  && bx.aoa[2][1] === null && bx.aoa[2][2] === 'lạ' && bx.aoa[1][3] === 6 && bx.kieu[1] === 'so');
+check('tenTepExcel: bỏ ký tự cấm, thêm ngày', X.tenTepExcel('Đơn: GT2/11', '2026-11-16') === 'Đơn- GT2-11_2026-11-16.xlsx');
 
 console.log('\n' + (fail ? 'THẤT BẠI' : 'ĐẠT') + ': ' + pass + ' đạt, ' + fail + ' lỗi');
 process.exit(fail ? 1 : 0);

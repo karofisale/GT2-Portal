@@ -2,12 +2,19 @@ import React, { useState } from 'react';
 import { api } from '../services/api';
 import { Field, Modal, Spinner, Loi, Tag, useTai, useLam, useUi } from '../ui';
 import { fmtNgay, fmtNum, fmtTien, NHAN_LOAI } from '../utils/format';
+import KetNoiSap from './KetNoiSap';
+import NhapDonCu from './NhapDonCu';
 
-const TABS = [['doiTac', 'Đối tác'], ['kho', 'Kho'], ['sanPham', 'Sản phẩm & giá'], ['leadtime', 'Leadtime'], ['lyDo', 'Lý do chưa có ngày'], ['ngayNghi', 'Ngày nghỉ lễ'], ['ketLuanQc', 'Kết luận QC'], ['thamSo', 'Tham số']];
+const TABS = [['doiTac', 'Đối tác'], ['kho', 'Kho'], ['sanPham', 'Sản phẩm & giá'], ['leadtime', 'Leadtime'], ['lyDo', 'Lý do chưa có ngày'], ['ngayNghi', 'Ngày nghỉ lễ'], ['ketLuanQc', 'Kết luận QC'], ['thamSo', 'Tham số'], ['ketNoiSap', 'Kết nối SAP'], ['nhapDonCu', 'Nhập đơn cũ']];
 
 /** Danh mục & cài đặt. Admin sửa tất cả; planner chỉ sửa leadtime (các mục khác chỉ xem). */
 export default function CaiDat({ me }) {
-  const [tab, setTab] = useState(me.role === 'planner' ? 'leadtime' : 'doiTac');
+  // chuông "Máy SAP lỗi" mở thẳng tab Kết nối SAP (ghi vào bộ nhớ trình duyệt trước khi chuyển màn)
+  const [tab, setTab] = useState(() => {
+    let t = '';
+    try { t = window.localStorage.getItem('gt2.caiDat.tab') || ''; window.localStorage.removeItem('gt2.caiDat.tab'); } catch { /* bộ nhớ bị chặn */ }
+    return TABS.some(([k]) => k === t) ? t : (me.role === 'planner' ? 'leadtime' : 'doiTac');
+  });
   const admin = me.role === 'admin';
   return (
     <div>
@@ -20,6 +27,8 @@ export default function CaiDat({ me }) {
       {tab === 'ketLuanQc' && <LyDo admin={admin} fnDoc="getKetLuanQc" fnLuu="saveKetLuanQc" nhan="kết luận" />}
       {tab === 'ngayNghi' && <NgayNghi admin={admin} />}
       {tab === 'thamSo' && <ThamSo admin={admin} />}
+      {tab === 'ketNoiSap' && <KetNoiSap admin={admin} />}
+      {tab === 'nhapDonCu' && (admin ? <NhapDonCu /> : <p className="muted">Chỉ admin nhập đơn cũ.</p>)}
     </div>
   );
 }

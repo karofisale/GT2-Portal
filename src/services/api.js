@@ -7,7 +7,8 @@ export const API_URL = (import.meta.env && import.meta.env.VITE_GT2_API) || 'htt
 const GHI = new Set(['createDon', 'updateDon', 'cancelDonKhach', 'approveDon', 'cancelDonAdmin', 'setSoSap', 'setNgayGiao', 'requestDo', 'saveDo', 'deleteDo', 'markPgi',
   'saveCaiDat', 'saveDoiTac', 'saveKho', 'importDanhMuc', 'saveLeadtime', 'saveLyDo', 'saveNgayNghi',
   'guiDienThanhToan', 'rutDienThanhToan', 'xacNhanThanhToan', 'tuChoiThanhToan', 'ghiThanhToanTay',
-  'createTraHang', 'updateTraHang', 'cancelTraHang', 'approveTraHang', 'rejectTraHang', 'saveQcTraHang', 'saveKetLuanQc']);
+  'createTraHang', 'updateTraHang', 'cancelTraHang', 'approveTraHang', 'rejectTraHang', 'saveQcTraHang', 'saveKetLuanQc',
+  'docThongBao', 'yeuCauDongBoSap', 'importDonCu']);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export class LoiApi extends Error {}

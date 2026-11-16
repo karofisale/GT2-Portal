@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { Field, Modal, Spinner, Loi, Tag, useTai, useLam, useUi } from '../ui';
 import { fmtNgay, fmtNum, fmtTien, homNay, layNguoi, nhoNguoi, sdtHopLe, docTien, laKhach, laNoiBo, TONE_TRA, NHAN_NGUON_GIA, docDongTra } from '../utils/format';
 import { docTep, XemTep } from './ThanhToan';
+import NutExcel from './XuatExcel';
 
 const TRANG_THAI = [['', 'Tất cả'], ['moi', 'Chờ xét'], ['da_duyet', 'Chờ kho / QC'], ['da_kiem', 'Đã kiểm xong'], ['tu_choi', 'Bị từ chối'], ['huy', 'Đã huỷ']];
 
@@ -23,6 +24,10 @@ export default function TraHang({ me }) {
         <div className="tabs" style={{ marginBottom: 0 }}>{TRANG_THAI.map(([k, t]) => <button key={k} className={st === k ? 'on' : ''} onClick={() => setSt(k)}>{t}</button>)}</div>
         <div style={{ flex: 1 }} />
         <button className="btn" onClick={ds.reload}>Tải lại</button>
+        {ds.data && <NutExcel ten="Tra-hang-3T" lay={() => [{ ten: 'Phiếu trả', dong: ds.data.items, cot: [{ key: 'ma', nhan: 'Phiếu' }].concat(khach ? [] : [{ key: 'doiTac', nhan: 'Đối tác' }])
+          .concat([{ key: 'kyNhan', nhan: 'Kỳ so sánh' }, { key: 'soDong', nhan: 'Số dòng', kieu: 'so' }, { key: 'tongSl', nhan: 'Tổng SL', kieu: 'so' }])
+          .concat(khach ? [] : [{ key: 'giaTri', nhan: 'Giá trị', kieu: 'tien' }]).concat([{ key: 'tyLePct', nhan: 'Tỷ lệ %', kieu: 'so' }, { key: 'nhan', nhan: 'Trạng thái' }, { nhan: 'Ngoại lệ', lay: (r) => (r.ngoaiLe ? 'Có' : '') },
+            { key: 'taoLuc', nhan: 'Ngày gửi', kieu: 'ngay' }, { key: 'nguoi', nhan: 'Người gửi' }]) }]} />}
         {khach && <button className="btn pri" onClick={() => setTao(true)}>+ Gửi phiếu trả hàng</button>}
       </div>
       <div style={{ marginTop: 10 }}>

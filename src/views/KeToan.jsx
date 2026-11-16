@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { Field, Modal, Spinner, Loi, useTai, useLam, useUi } from '../ui';
 import { fmtNgay, fmtNum, fmtTien, NHAN_MIEN, homNay } from '../utils/format';
 import { BangThanhToan } from './ThanhToan';
+import NutExcel from './XuatExcel';
 
 /**
  * DO, xuất kho & tiền về (Kế toán / admin): nhập số DO cho các dòng đã báo, đánh dấu DO đã xuất kho (PGI) trên SAP = hoàn thành;
@@ -41,6 +42,16 @@ export default function KeToan({ me }) {
   const dien = d.choXacNhanTien || [];
   return (
     <div>
+      <div className="row" style={{ justifyContent: 'flex-end' }}>
+        <NutExcel ten="Ke-toan-GT2" lay={() => [
+          { ten: 'Chờ tạo DO', dong: d.choDo, cot: [{ key: 'ma', nhan: 'Đơn' }, { key: 'doiTac', nhan: 'Đối tác' }, { nhan: 'Miền', lay: (r) => NHAN_MIEN[r.mien] }, { key: 'soSap', nhan: 'SO' }, { key: 'poKhach', nhan: 'PO' },
+            { key: 'diemTen', nhan: 'Điểm giao' }, { key: 'sku', nhan: 'Mã' }, { key: 'ten', nhan: 'Tên' }, { key: 'qty', nhan: 'SL', kieu: 'so' }, { key: 'ngayGiaoDk', nhan: 'Ngày giao dự kiến', kieu: 'ngay' }] },
+          { ten: 'DO chờ xuất kho', dong: d.choPgi, cot: [{ key: 'soDo', nhan: 'Số DO' }, { key: 'ngayDo', nhan: 'Ngày DO', kieu: 'ngay' }, { key: 'ma', nhan: 'Đơn' }, { key: 'doiTac', nhan: 'Đối tác' },
+            { key: 'soSap', nhan: 'SO' }, { key: 'sku', nhan: 'Mã' }, { key: 'sl', nhan: 'SL', kieu: 'so' }] },
+          { ten: 'Điện chờ xác nhận', dong: dien, cot: [{ key: 'ma', nhan: 'Đơn' }, { key: 'soSap', nhan: 'SO' }, { key: 'doiTac', nhan: 'Đối tác' }, { key: 'doiTacTen', nhan: 'Tên' }, { key: 'cha', nhan: 'Thuộc BHT' },
+            { key: 'soTien', nhan: 'Số tiền', kieu: 'tien' }, { key: 'ngayChuyen', nhan: 'Ngày chuyển', kieu: 'ngay' }, { key: 'noiDung', nhan: 'Nội dung' }, { nhan: 'Người gửi', lay: (r) => r.nguoi.ten + ' ' + r.nguoi.sdt },
+            { key: 'nhapLuc', nhan: 'Gửi lúc', kieu: 'ngay' }] }]} />
+      </div>
       <div className="card">
         <h3>Điện chuyển tiền chờ xác nhận ({dien.length}{dien.length ? ' · ' + fmtTien(dien.reduce((a, t) => a + t.soTien, 0)) : ''})</h3>
         {dien.length ? <BangThanhToan ds={dien.map((t) => ({ ...t, trangThai: 'cho', nguon: 'dien', soTienXn: null, ngayTienVe: '', lyDoTuChoi: '', noiDung: (t.doiTacTen ? t.doiTac + ' · ' + t.doiTacTen + (t.cha ? ' (thuộc ' + t.cha + ')' : '') : '') + (t.noiDung ? ' — ' + t.noiDung : '') }))} me={me} onDoi={hv.reload} />

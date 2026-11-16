@@ -4,6 +4,19 @@ import { Field, Modal, Spinner, Loi, Tag, useTai, useLam, useUi } from '../ui';
 import { fmtNgay, fmtNum, fmtTien, NHAN_MIEN, NHAN_LOAI, NHAN_DONG, laNoiBo } from '../utils/format';
 import DatHang from './DatHang';
 import { MucThanhToanDon } from './ThanhToan';
+import NutExcel from './XuatExcel';
+
+/** Cột Excel danh sách đơn theo dòng (getDonsXuat). Giá Karofi→BHT chỉ có khi máy chủ trả (nội bộ / BHT). */
+function cotXuatDon(items, nhieuDt) {
+  const coBht = items.some((x) => x.giaBht !== undefined);
+  return [{ key: 'ma', nhan: 'Mã đơn' }].concat(nhieuDt ? [{ key: 'doiTac', nhan: 'Đối tác' }, { key: 'doiTacTen', nhan: 'Tên đối tác' }] : [])
+    .concat([{ key: 'mien', nhan: 'Miền' }, { key: 'poKhach', nhan: 'Số PO' }, { key: 'soSap', nhan: 'Số SO' }, { key: 'diemTen', nhan: 'Điểm giao' }, { key: 'trangThaiDon', nhan: 'Trạng thái đơn' },
+      { key: 'taoLuc', nhan: 'Ngày đặt', kieu: 'ngay' }, { key: 'duyetLuc', nhan: 'Ngày duyệt', kieu: 'ngay' }, { key: 'sku', nhan: 'Mã hàng' }, { key: 'ten', nhan: 'Tên hàng' },
+      { key: 'qty', nhan: 'SL đặt', kieu: 'so' }, { key: 'gia', nhan: 'Đơn giá', kieu: 'tien' }, { key: 'thanhTien', nhan: 'Thành tiền', kieu: 'tien' }])
+    .concat(coBht ? [{ key: 'giaBht', nhan: 'Giá Karofi→BHT', kieu: 'tien' }] : [])
+    .concat([{ key: 'ngayGiaoDk', nhan: 'Ngày giao dự kiến', kieu: 'ngay' }, { key: 'ghiChuKh', nhan: 'Ghi chú kế hoạch' }, { key: 'daGiao', nhan: 'Đã giao', kieu: 'so' },
+      { key: 'conLai', nhan: 'Còn lại', kieu: 'so' }, { nhan: 'Trạng thái dòng', lay: (r) => NHAN_DONG[r.trangThaiDong] || r.trangThaiDong }, { key: 'do', nhan: 'DO (SL, xuất kho)' }]);
+}
 
 const TRANG_THAI = [['', 'Tất cả trạng thái'], ['moi', 'Mới — chờ duyệt'], ['da_duyet', 'Đã duyệt / đang giao'], ['hoan_thanh', 'Hoàn thành'], ['huy', 'Đã huỷ']];
 
@@ -23,6 +36,7 @@ export function DonList({ me, trangThaiMd }) {
         <Field label="Tìm (mã đơn, PO, SO, điểm giao)" style={{ minWidth: 240 }}><input value={q} onChange={(e) => setQ(e.target.value)} /></Field>
         {nhieuDt && <Field label="Mã đối tác"><input value={dt} onChange={(e) => setDt(e.target.value)} style={{ width: 110 }} /></Field>}
         <button className="btn" onClick={ds.reload} style={{ marginBottom: 8 }}>Tải lại</button>
+        <span style={{ marginBottom: 8 }}><NutExcel ten="Don-GT2" nhan="⬇ Excel (theo dòng)" lay={async () => { const r = await api('getDonsXuat', { status: st, q, doiTac: dt }); return [{ ten: 'Đơn theo dòng', cot: cotXuatDon(r.items, nhieuDt), dong: r.items }]; }} /></span>
       </div>
       {ds.loading && !ds.data ? <Spinner /> : ds.error ? <Loi onRetry={ds.reload}>{ds.error}</Loi> : (
         <div className="tablewrap">

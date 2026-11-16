@@ -87,3 +87,20 @@ tr.late td { background: var(--rose-bg); }
 .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-bottom: 6px; }
 .stat { background: var(--gray-bg); border-radius: 8px; padding: 8px 10px; }
 .stat b { font-size: 15px; font-variant-numeric: tabular-nums; }
+
+/* chuông thông báo (đợt 38) */
+.chuong { position: relative; }
+.chuong .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: var(--rose); color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
+.popover { position: absolute; right: 0; top: calc(100% + 6px); width: min(380px, calc(100vw - 24px)); max-height: 70vh; display: flex; flex-direction: column; background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 8px 28px rgba(0, 0, 0, .18); z-index: 40; }
+.pop-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.pop-head .sp { flex: 1; }
+.pop-list { overflow-y: auto; }
+.pop-item { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--line); background: none; padding: 9px 12px; cursor: pointer; }
+.pop-item:hover { background: var(--gray-bg); }
+.pop-item .t { font-weight: 600; }
+.pop-item.doc .t { font-weight: 400; color: var(--muted); }
+.pop-item.warn .t { color: var(--rose); }
+.pop-item.nhac { background: var(--amber-bg); }
+.pop-item .cham { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--brand); margin-right: 6px; vertical-align: middle; }
+.pad { padding: 12px; }

@@ -3,6 +3,23 @@ import { api } from '../services/api';
 import { Spinner, Loi, Tag, useTai } from '../ui';
 import { fmtTien, fmtNgay, NHAN_LOAI, laKhach, tinhTrangHan } from '../utils/format';
 import { SoDoiTac } from './ThanhToan';
+import NutExcel from './XuatExcel';
+
+/** Excel sổ công nợ: tổng theo đối tác + chi tiết từng khoản nợ (mỗi DO đã xuất kho) của các đối tác có chi tiết. */
+function sheetCongNo(ds) {
+  const cotTong = [{ key: 'code', nhan: 'Mã đối tác' }, { key: 'name', nhan: 'Tên' }, { nhan: 'Loại', lay: (r) => NHAN_LOAI[r.loai] }, { key: 'cha', nhan: 'Thuộc BHT' },
+    { key: 'hanMuc', nhan: 'Hạn mức', kieu: 'tien' }, { key: 'tong', nhan: 'Đã giao', kieu: 'tien' }, { key: 'daTra', nhan: 'Đã trả', kieu: 'tien' }, { key: 'conNo', nhan: 'Còn nợ', kieu: 'tien' },
+    { key: 'quaHan', nhan: 'Quá hạn', kieu: 'tien' }, { key: 'soNgayQuaHanMax', nhan: 'Quá hạn lâu nhất (ngày)', kieu: 'so' }, { key: 'sapDenHan', nhan: 'Sắp đến hạn', kieu: 'tien' },
+    { key: 'choXacNhan', nhan: 'Điện chờ xác nhận', kieu: 'tien' }, { nhan: 'Tình trạng', lay: (r) => tinhTrangHan(r).nhan }];
+  const khoan = [];
+  ds.forEach((x) => (x.dons || []).forEach((dn) => (dn.khoans || []).forEach((k) => khoan.push({ doiTac: x.code, ma: dn.ma, soSap: dn.soSap, soDo: k.soDo, ngayPgi: k.ngayPgi, han: k.han,
+    soTien: k.soTien, daTra: k.daTra, conNo: k.conNo, quaHanNgay: k.quaHanNgay }))));
+  const out = [{ ten: 'Tổng theo đối tác', dong: ds, cot: cotTong }];
+  if (khoan.length) out.push({ ten: 'Chi tiết khoản nợ', dong: khoan, cot: [{ key: 'doiTac', nhan: 'Đối tác' }, { key: 'ma', nhan: 'Đơn' }, { key: 'soSap', nhan: 'SO' }, { key: 'soDo', nhan: 'DO' },
+    { key: 'ngayPgi', nhan: 'Ngày xuất kho', kieu: 'ngay' }, { key: 'han', nhan: 'Hạn', kieu: 'ngay' }, { key: 'soTien', nhan: 'Số tiền', kieu: 'tien' }, { key: 'daTra', nhan: 'Đã trả', kieu: 'tien' },
+    { key: 'conNo', nhan: 'Còn nợ', kieu: 'tien' }, { key: 'quaHanNgay', nhan: 'Quá hạn (ngày)', kieu: 'so' }] });
+  return out;
+}
 
 /**
  * Công nợ kênh BHT (pha 2). Ghi nợ theo DO đã xuất kho, hạn = ngày xuất kho + 5 ngày; tiền trả gắn với từng đơn, chỉ trừ nợ sau khi Kế toán xác nhận.
@@ -45,6 +62,7 @@ function CongNoKhach({ me }) {
     <div>
       {!d.coBangThanhToan && <div className="notice warn">Chức năng gửi điện chuyển tiền chưa được bật — tạm thời chỉ xem được phần nợ.</div>}
       {d.doiTacs.some((x) => x.quaHan > 0) && <div className="notice err">Đang có khoản <b>quá hạn</b> — vui lòng thanh toán và gửi điện chuyển tiền để Karofi xác nhận.</div>}
+      <div className="row" style={{ justifyContent: 'flex-end' }}><NutExcel ten="Cong-no-GT2" lay={() => sheetCongNo(d.doiTacs)} /></div>
       {nhieu && <NhomBht ds={d.nhomBht} />}
       {d.doiTacs.map((x) => (
         <div key={x.code} className="card">
@@ -77,7 +95,10 @@ function CongNoNoiBo({ me }) {
       {!d.coBangThanhToan && <div className="notice warn">Chưa chạy SQL đợt 33 (chay-dot33-gt2-cong-no) — sổ chỉ có phần nợ theo DO, chưa nhận / xác nhận điện chuyển tiền được.</div>}
       <NhomBht ds={d.nhomBht} />
       <div className="card">
-        <h3>Từng đối tác kênh BHT</h3>
+        <div className="row"><h3 style={{ flex: 1 }}>Từng đối tác kênh BHT</h3>
+          <NutExcel ten="Cong-no-BHT" lay={async () => { const ct2 = [];
+            for (const y of d.doiTacs.filter((z) => z.tong > 0 || Math.abs(z.conNo) > 0.004)) { const c = await api('getCongNo', { doiTac: y.code }); if (c.doiTacs[0]) ct2.push(c.doiTacs[0]); }
+            return sheetCongNo(ct2.length ? ct2 : d.doiTacs); }} /></div>
         <div className="tabs">{[['', 'Tất cả'], ['con_no', 'Còn nợ'], ['qua_han', 'Quá hạn'], ['vuot', 'Vượt hạn mức'], ['cho', 'Có điện chờ xác nhận']].map(([k, t]) =>
           <button key={k} className={loc === k ? 'on' : ''} onClick={() => setLoc(k)}>{t}</button>)}</div>
         <div className="tablewrap"><table>

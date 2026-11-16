@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../services/api';
 import { Field, Spinner, Loi, Tag, useTai } from '../ui';
 import { fmtNgay, fmtNum, fmtTien, NHAN_MIEN, NHAN_DONG, laNoiBo } from '../utils/format';
+import NutExcel from './XuatExcel';
 
 /** Theo mã hàng: một mã xuyên các đơn — SL đặt, đã giao, còn lại, ngày giao dự kiến, SO, DO, trạng thái. */
 export function TheoMa({ me }) {
@@ -17,7 +18,11 @@ export function TheoMa({ me }) {
       </form>
       {kq.loading && chay ? <Spinner /> : kq.error ? <Loi onRetry={kq.reload}>{kq.error}</Loi> : kq.data && (
         <>
-          <p className="muted">Mã <b>{kq.data.sku}</b> — tổng SL đặt (các đơn chưa huỷ): <b>{fmtNum(kq.data.tong.dat)}</b></p>
+          <div className="row"><p className="muted" style={{ flex: 1 }}>Mã <b>{kq.data.sku}</b> — tổng SL đặt (các đơn chưa huỷ): <b>{fmtNum(kq.data.tong.dat)}</b></p>
+            <NutExcel ten={'Theo-ma-' + kq.data.sku} lay={() => [{ ten: 'Mã ' + kq.data.sku, dong: kq.data.items, cot: [{ key: 'ma', nhan: 'Đơn' }].concat(nhieuDt ? [{ key: 'doiTac', nhan: 'Đối tác' }] : [])
+              .concat([{ nhan: 'Miền', lay: (r) => NHAN_MIEN[r.mien] }, { key: 'poKhach', nhan: 'PO' }, { key: 'soSap', nhan: 'SO' }, { key: 'qty', nhan: 'SL đặt', kieu: 'so' }, { key: 'daGiao', nhan: 'Đã giao', kieu: 'so' },
+                { key: 'conLai', nhan: 'Còn lại', kieu: 'so' }, { key: 'ngayGiaoDk', nhan: 'Ngày giao dự kiến', kieu: 'ngay' }, { nhan: 'DO', lay: (r) => r.do.map((x) => x.soDo + ' (' + x.sl + (x.pgi ? ', đã xuất' : '') + ')').join('; ') },
+                { nhan: 'Trạng thái', lay: (r) => NHAN_DONG[r.trangThai] }]) }]} /></div>
           <div className="tablewrap">
             <table>
               <thead><tr><th>Đơn</th>{nhieuDt && <th>Đối tác</th>}<th>Miền</th><th>PO / SO</th><th className="num">SL đặt</th><th className="num">Đã giao</th><th className="num">Còn lại</th><th>Ngày giao dự kiến</th><th>DO</th><th>Trạng thái</th></tr></thead>

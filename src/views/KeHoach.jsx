@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../services/api';
 import { Spinner, Loi, Tag, useTai, useLam, useUi } from '../ui';
 import { fmtNgay, fmtNum, NHAN_MIEN, homNay } from '../utils/format';
+import NutExcel from './XuatExcel';
 
 const NGUON = { co_san: 'Đủ tồn kho riêng', nha_may: 'Từ nhà máy', leadtime: 'Theo leadtime', khong_co: 'Chưa có cơ sở' };
 
@@ -40,6 +41,12 @@ export default function KeHoach() {
       <div className="tabs">
         <button className={tab === 'cho' ? 'on' : ''} onClick={() => setTab('cho')}>Chờ xác nhận ngày giao ({d.choXacNhan.length}{d.choXacNhan.some((x) => x.quaHan) ? ' · có quá hạn' : ''})</button>
         <button className={tab === 'capnhat' ? 'on' : ''} onClick={() => setTab('capnhat')}>Cần cập nhật tuần ({d.canCapNhat.length})</button>
+        <span style={{ flex: 1 }} />
+        <NutExcel ten="Ke-hoach-giao-hang-GT2" lay={() => [['Chờ xác nhận', d.choXacNhan], ['Cần cập nhật', d.canCapNhat]].map(([ten, dong]) => ({ ten, dong, cot: [
+          { key: 'ma', nhan: 'Đơn' }, { key: 'doiTac', nhan: 'Đối tác' }, { nhan: 'Miền', lay: (r) => NHAN_MIEN[r.mien] }, { key: 'soSap', nhan: 'SO' }, { key: 'diemTen', nhan: 'Điểm giao' },
+          { key: 'sku', nhan: 'Mã' }, { key: 'ten', nhan: 'Tên' }, { key: 'category', nhan: 'Nhóm' }, { key: 'qty', nhan: 'SL', kieu: 'so' }, { key: 'tonRieng', nhan: 'Tồn riêng', kieu: 'so' },
+          { key: 'tonNhaMay', nhan: 'Tồn nhà máy', kieu: 'so' }, { key: 'duyetLuc', nhan: 'Duyệt lúc', kieu: 'ngay' }, { key: 'han', nhan: 'Hạn xác nhận', kieu: 'ngay' }, { nhan: 'Quá hạn', lay: (r) => (r.quaHan ? 'Có' : '') },
+          { nhan: 'Gợi ý ngày', kieu: 'ngay', lay: (r) => r.goiY && r.goiY.ngay }, { key: 'ngayGiaoDk', nhan: 'Ngày giao dự kiến', kieu: 'ngay' }, { key: 'lyDo', nhan: 'Lý do chưa có ngày' }, { key: 'ghiChuKh', nhan: 'Ghi chú' }] }))} />
       </div>
       <p className="small muted">Hạn xác nhận: {d.cauHinh.soNgay} ngày làm việc (thứ 2–thứ 7, trừ lịch nghỉ lễ) kể từ lúc admin duyệt. Ngày giao dự kiến quá {d.cauHinh.capNhat} ngày chưa cập nhật sẽ vào tab "Cần cập nhật".</p>
       <div className="tablewrap">

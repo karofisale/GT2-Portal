@@ -12,6 +12,8 @@ import KeToan from './views/KeToan';
 import CaiDat from './views/CaiDat';
 import CongNo from './views/CongNo';
 import TraHang from './views/TraHang';
+import BaoCao from './views/BaoCao';
+import Chuong from './views/ThongBao';
 
 export default function App() {
   const ss = useMemo(() => sessionGt2(), []);
@@ -43,6 +45,7 @@ export default function App() {
         <div className="brand">Karofi <b>GT2 Portal</b></div>
         {u.doiTac && <span className="tag tag-blue">{u.doiTac.name} · {NHAN_LOAI[u.doiTac.loai]}</span>}
         <div className="sp" />
+        <Chuong me={u} chuyen={setTab} menu={menu} />
         <div className="who"><strong>{u.name}</strong><br />{NHAN_VAI[u.role] || u.role}</div>
         {khac.length > 0 && <button className="btn sm" onClick={() => setCapApp(true)}>Ứng dụng</button>}
         <button className="btn sm" onClick={() => { if (!veCongSauDangXuat()) location.reload(); }}>Đăng xuất</button>
@@ -73,6 +76,7 @@ function Man({ tab, me, chuyen }) {
     case 'caiDat': return <CaiDat me={me} />;
     case 'congNo': return <CongNo me={me} />;
     case 'traHang': return <TraHang me={me} />;
+    case 'baoCao': return <BaoCao />;
     default: return laKhach(me.role) ? <DatHang me={me} onXong={() => chuyen('donCuaToi')} /> : <DonList me={me} />;
   }
 }

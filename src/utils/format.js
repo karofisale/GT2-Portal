@@ -38,6 +38,7 @@ export function menuTheoVai(role, loai) {
   if (role === 'admin' || role === 'viewer') m.push({ key: 'traHang', nhan: 'Trả hàng 3T' });
   m.push({ key: 'tatCaDon', nhan: 'Tất cả đơn' });
   m.push({ key: 'theoMa', nhan: 'Theo mã hàng' });
+  if (role !== 'qc') m.push({ key: 'baoCao', nhan: 'Báo cáo kênh' });
   if (role === 'admin' || role === 'planner') m.push({ key: 'caiDat', nhan: 'Danh mục & cài đặt' });
   return m;
 }
@@ -112,3 +113,38 @@ export function docDongTra(text) {
   });
   return { lines, loi };
 }
+
+/* ---------- nhập đơn cũ (đợt 38) ---------- */
+/** Cột của mẫu nhập đơn cũ: [khoá gửi máy chủ, tiêu đề trên mẫu, ví dụ]. */
+export const COT_DON_CU = [
+  ['maCu', 'Mã đơn cũ', 'Asia 07'], ['doiTac', 'Mã đối tác', 'ASIA'], ['ngayDat', 'Ngày đặt', '05/10/2026'], ['sku', 'Mã hàng', '1000101'], ['ten', 'Tên hàng', 'Máy RO'],
+  ['sl', 'SL', 10], ['donGia', 'Đơn giá (bỏ trống = giá hiện hành)', ''], ['mien', 'Miền (Bắc/Nam)', ''], ['so', 'Số SO', '1000400007'], ['ngaySo', 'Ngày SO', '05/10/2026'],
+  ['soDo', 'Số DO', '6000400007'], ['ngayXuat', 'Ngày xuất kho', '07/10/2026'], ['daThanhToan', 'Đã thanh toán cả đơn (kênh BHT)', ''], ['ghiChu', 'Ghi chú', '']
+];
+const boDau = (s) => String(s == null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().replace(/\s+/g, ' ').trim();
+const nhanDauCot = (s) => boDau(s).replace(/\(.*\)/g, '').trim();
+
+/**
+ * Bảng dán / đọc từ Excel (mảng 2 chiều, dòng đầu = tiêu đề) -> [{ maCu, doiTac, ... }] để gửi importDonCu. Tiêu đề so không dấu, bỏ phần trong ngoặc.
+ * Ô ngày kiểu Date -> 'YYYY-MM-DD' (theo giờ máy). Bỏ dòng trống. Trả { rows, thieuCot: [tiêu đề bắt buộc chưa có] }.
+ */
+export function docBangDonCu(aoa) {
+  const bang = (aoa || []).filter((r) => r && r.some((c) => String(c == null ? '' : c).trim() !== ''));
+  if (!bang.length) return { rows: [], thieuCot: ['Mã đơn cũ'] };
+  const dau = bang[0].map(nhanDauCot);
+  const viTri = {};
+  COT_DON_CU.forEach(([k, nhan]) => { const i = dau.indexOf(nhanDauCot(nhan)); if (i >= 0) viTri[k] = i; });
+  const batBuoc = [['maCu', 'Mã đơn cũ'], ['doiTac', 'Mã đối tác'], ['ngayDat', 'Ngày đặt'], ['sku', 'Mã hàng'], ['sl', 'SL']];
+  const thieuCot = batBuoc.filter(([k]) => viTri[k] === undefined).map(([, n]) => n);
+  const o = (v) => (v instanceof Date ? v.getFullYear() + '-' + String(v.getMonth() + 1).padStart(2, '0') + '-' + String(v.getDate()).padStart(2, '0') : (v == null ? '' : (typeof v === 'number' ? v : String(v).trim())));
+  const rows = bang.slice(1).map((r) => { const x = {}; Object.keys(viTri).forEach((k) => { x[k] = o(r[viTri[k]]); }); return x; });
+  return { rows, thieuCot };
+}
+
+/** Tách văn bản dán từ Excel (tab) thành mảng 2 chiều. */
+export const tachBangDan = (text) => String(text || '').split(/\r?\n/).filter((l) => l.trim()).map((l) => l.split('\t'));
+
+/* ---------- báo cáo kênh (pha 4) ---------- */
+export const NHAN_NGUON_KH = { approved: 'Bản đã duyệt', final: 'Bản chốt', none: 'Chưa có kế hoạch FC' };
+/** % hiển thị: null -> '—'. */
+export const fmtPct = (v) => (v === null || v === undefined || !isFinite(Number(v)) ? '—' : Number(v).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + '%');
