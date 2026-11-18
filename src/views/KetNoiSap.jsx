@@ -20,8 +20,8 @@ export default function KetNoiSap({ admin }) {
     <div>
       {!d.coBang && <div className="notice warn">Chưa chạy SQL đợt 38 (chay-dot38-gt2-thong-bao-sap) — màn này chỉ xem được trạng thái cũ, chưa bấm "Đồng bộ ngay" được.</div>}
       <p className="small muted">
-        Máy có SAP GUI tự lấy: <b>SO</b> từ VA05 (số PO = mã đơn GT2), <b>DO + xuất kho</b> từ ZSD450 (DO đã xuất hoá đơn), <b>tồn kho</b> từ MB52 — theo lịch thứ 2 – thứ 7
-        từ {d.lich.batDau} đến {d.lich.ketThuc}: SO / DO mỗi {d.lich.chuKy} phút, tồn mỗi {d.lich.chuKyTon} phút; SO quét {d.lich.soNgayQuet} ngày gần nhất.
+        Máy có SAP GUI tự lấy: <b>SO</b> từ VA05 (số PO = mã đơn GT2), <b>DO + xuất kho</b> từ ZSD450 (DO đã xuất hoá đơn), <b>tồn kho</b> từ MB52 — theo lịch: SO / DO thứ 2 – thứ 7
+        từ {d.lich.batDau} đến {d.lich.ketThuc}, mỗi {d.lich.chuKy} phút; <b>tồn kho chỉ cào 1 lần lúc {d.lich.gioTon} mỗi ngày thứ 2 – thứ 6</b> (không thứ 7, chủ nhật, lễ); SO quét {d.lich.soNgayQuet} ngày gần nhất.
         Đổi lịch ở tab <b>Tham số</b> (sap_…). Nhập tay (SO, DO, xuất kho) vẫn dùng được song song.
       </p>
       <div className="row" style={{ gap: 16, marginBottom: 8 }}>
